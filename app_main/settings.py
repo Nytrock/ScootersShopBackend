@@ -23,7 +23,8 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'rest_framework',
     'drf_spectacular',
-    'users.apps.UsersConfig'
+    'users.apps.UsersConfig',
+    'scooters.apps.ScootersConfig',
 ]
 
 MIDDLEWARE = [
