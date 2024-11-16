@@ -1,12 +1,15 @@
-from django.urls import re_path
-
-from .views import ScooterCreate, ScooterList, ScooterDetail
+from django.urls import re_path, include
+from rest_framework import routers
+from .views import ScooterList, ScooterDetail, ScooterBuy
 
 app_name = 'catalog'
 
+router = routers.DefaultRouter()
+router.register('buy', ScooterBuy, basename='scooter-buy')
+router.register('', ScooterList, basename='scooter-list')
+router.register('', ScooterDetail, basename='scooter-detail')
+
+
 urlpatterns = [
-    re_path('add', ScooterCreate.as_view()),
-    re_path('', ScooterList.as_view()),
-    re_path('<int:id>/', ScooterDetail.as_view()),
-    # re_path('toCart/<int:scooter_id>/', AddToCart.as_view()),
+    re_path('', include(router.urls)),
 ]

@@ -26,6 +26,10 @@ class UserSerializer(ModelSerializer):
         )
         return user
 
+class CustomerSerializer(ModelSerializer):
+    class Meta:
+        model = Customer
+        fields = ['user', 'balance', 'image']
 
 class LoginSerializer(Serializer):
     username = serializers.CharField(
@@ -50,7 +54,6 @@ class LoginSerializer(Serializer):
             raise serializers.ValidationError('Both "username" and "password" are required.', code='authorization')
         attrs['user'] = user
         return attrs
-
 
 class BalanceSerializer(Serializer):
     amount = serializers.IntegerField(

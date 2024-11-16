@@ -6,10 +6,10 @@ from rest_framework.generics import ListAPIView, DestroyAPIView
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
-
+from rest_framework.generics import RetrieveAPIView
 from users.models import Customer, Purchase
 from users.serializers import LoginSerializer, UserSerializer, BalanceSerializer, PurchaseSerializer, \
-    PurchaseDeleteSerializer
+    PurchaseDeleteSerializer, CustomerSerializer
 
 
 class SignupView(APIView):
@@ -133,3 +133,21 @@ class PurchaseDeleteView(DestroyAPIView):
 
         purchase.delete()
         return Response(None, status=status.HTTP_204_NO_CONTENT)
+
+class ProfileView(RetrieveAPIView):
+    @extend_schema(
+        summary='Профиль польщователя',
+        description='Возвращает id, баланс и фото пользователя',
+        request=CustomerSerializer,
+        responses={
+            200: OpenApiResponse(response=CustomerSerializer, description='Профиль пользователя'),
+            404: OpenApiResponse(description="Пользователь не найден")
+        },
+    )
+    def get(self, request):
+        try:
+            user = Customer.objects.get(id=request.user.id)
+        except Customer.DoesNotExist:
+            return Response(CustomerSerializer.errors)
+        serializer = CustomerSerializer(user)
+        return Response(serializer.data)

@@ -1,28 +1,17 @@
-from rest_framework.generics import CreateAPIView, ListAPIView, RetrieveAPIView, RetrieveUpdateAPIView, DestroyAPIView
+from rest_framework.generics import CreateAPIView, ListAPIView, RetrieveAPIView, RetrieveUpdateAPIView, DestroyAPIView, ListCreateAPIView
 from .serializers import ScooterSerializer
-from rest_framework.permissions import AllowAny
+from users.serializers import PurchaseSerializer
+from rest_framework.permissions import AllowAny, IsAuthenticated
+from rest_framework import status, viewsets
+from rest_framework import mixins
+from rest_framework.views import APIView
+from users.models import Purchase, User
 from .models import Scooter
+from rest_framework.response import Response
+from users.models import Purchase
 from drf_spectacular.utils import extend_schema, OpenApiResponse
 
-class ScooterCreate(CreateAPIView):
-    serializer_class=ScooterSerializer
-    permission_classes = (AllowAny,)
-    @extend_schema(
-        summary="Добавление самоката в базу данных",
-        description="Создаёт новый самокат с уникальным названием, описанием и стоимостью за минуту. "
-                    "Макс длина названия - 100 символов."
-                    "Макс длина описания - 100 символов."
-                    "Макс цена - 100 р./мин",
-        request=ScooterSerializer,
-        responses={
-            201: OpenApiResponse(response=ScooterSerializer, description="Самокат успешно создан"),
-            400: OpenApiResponse(description="Ошибки валидации")
-        }
-    )
-    def post(self, request, *args, **kwargs):
-        return self.create(request, *args, **kwargs)
-    
-class ScooterList(ListAPIView):
+class ScooterList(viewsets.GenericViewSet, mixins.ListModelMixin):
     serializer_class=ScooterSerializer
     queryset = Scooter.objects.all()
     @extend_schema(
@@ -35,7 +24,7 @@ class ScooterList(ListAPIView):
     def get(self, request):
         return self.list(request)
     
-class ScooterDetail(RetrieveAPIView):
+class ScooterDetail(viewsets.GenericViewSet, mixins.RetrieveModelMixin):
     queryset = Scooter.objects.all()
     serializer_class = ScooterSerializer
     @extend_schema(
@@ -48,3 +37,25 @@ class ScooterDetail(RetrieveAPIView):
     )
     def get(self, request):
         return self.retrieve(request)
+    
+class ScooterBuy(viewsets.GenericViewSet, mixins.CreateModelMixin):
+    serializer_class = PurchaseSerializer
+    permission_classes = [IsAuthenticated]
+    @extend_schema(
+        summary="Покупка самоката",
+        description="Возвращает результат попытки покупки.",
+        responses={
+            201: OpenApiResponse(response=PurchaseSerializer, description="Покупка совершена успешно"),
+            400: OpenApiResponse(description="Ошибки валидации")
+        }
+    )
+    def post(self, request):
+        serializer = PurchaseSerializer(data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response(serializer.data, status=status.HTTP_400_BAD_REQUEST)
+
+    
+
+
