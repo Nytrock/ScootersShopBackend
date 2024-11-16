@@ -3,6 +3,8 @@ from django.contrib.auth.models import User
 from rest_framework import serializers
 from rest_framework.serializers import ModelSerializer, Serializer
 
+from users.models import Customer
+
 
 class UserSerializer(ModelSerializer):
     class Meta:
@@ -17,6 +19,11 @@ class UserSerializer(ModelSerializer):
         )
         user.set_password(validated_data['password'])
         user.save()
+
+        Customer.objects.create(
+            id=user.id,
+            user=user,
+        )
         return user
 
 
