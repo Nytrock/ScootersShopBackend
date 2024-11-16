@@ -10,5 +10,5 @@ urlpatterns = [
     re_path('signup', SignupView.as_view()),
     re_path('add_balance', AddBalanceView.as_view()),
     re_path('purchases', PurchaseListView.as_view()),
-    re_path('delete_purchase/<int:id>', PurchaseDeleteView.as_view()),
+    re_path(r'delete_purchase/(?P<id>[0-9]+)/$', PurchaseDeleteView.as_view()),
 ]

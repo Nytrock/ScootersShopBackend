@@ -29,14 +29,12 @@ class UserSerializer(ModelSerializer):
 
 class LoginSerializer(Serializer):
     username = serializers.CharField(
-        label='Username',
-        write_only=True
+        label='Username'
     )
     password = serializers.CharField(
         label='Password',
         style={'input_type': 'password'},
-        trim_whitespace=False,
-        write_only=True
+        trim_whitespace=False
     )
 
     def validate(self, attrs):

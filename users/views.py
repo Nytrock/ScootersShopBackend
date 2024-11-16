@@ -7,7 +7,6 @@ from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from core.serializers import SuccessSerializer
 from users.models import Customer, Purchase
 from users.serializers import LoginSerializer, UserSerializer, BalanceSerializer, PurchaseSerializer, \
     PurchaseDeleteSerializer
@@ -21,17 +20,17 @@ class SignupView(APIView):
         description='Регистрация нового пользователя по имени, паролю и почте',
         request=UserSerializer,
         responses={
-            status.HTTP_200_OK: SuccessSerializer(),
+            status.HTTP_200_OK: UserSerializer,
             status.HTTP_400_BAD_REQUEST: OpenApiResponse(
-                response=UserSerializer.errors,
-                description='Выводит ошибки сериалайзера'),
+                response=None,
+                description='Ошибки сериалайзера'),
         }
     )
     def post(self, request):
         serializer = UserSerializer(data=request.data)
         if serializer.is_valid():
             serializer.save()
-            return Response(SuccessSerializer)
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
@@ -42,14 +41,19 @@ class LoginView(APIView):
         summary='Вход пользователя',
         description='Вход пользователя по имени и паролю. Информация о входе сохраняется на стороне пользователя',
         request=LoginSerializer,
-        responses=SuccessSerializer,
+        responses={
+            status.HTTP_200_OK: LoginSerializer,
+            status.HTTP_400_BAD_REQUEST: OpenApiResponse(
+                response=None,
+                description='Ошибки сериалайзера'),
+        },
     )
     def post(self, request):
         serializer = LoginSerializer(data=self.request.data, context={ 'request': self.request })
         serializer.is_valid(raise_exception=True)
         user = serializer.validated_data['user']
         login(request, user)
-        return Response(SuccessSerializer, status=status.HTTP_200_OK)
+        return Response(serializer.data, status=status.HTTP_200_OK)
 
 
 class LogoutView(APIView):
@@ -57,17 +61,14 @@ class LogoutView(APIView):
     @extend_schema(
         summary='Выход пользователя',
         description='Выход пользователя. На вход ничего не требует, выход происходит через метадату или вроде того',
-        request=BalanceSerializer,
+        request=None,
         responses={
-            status.HTTP_200_OK: SuccessSerializer,
-            status.HTTP_400_BAD_REQUEST: OpenApiResponse(
-                response=UserSerializer.errors,
-                description='Выводит ошибки сериалайзера'),
+            status.HTTP_200_OK: None,
         },
     )
     def post(self, request):
         logout(request)
-        return Response(SuccessSerializer, status=status.HTTP_200_OK)
+        return Response(None, status=status.HTTP_200_OK)
 
 
 class AddBalanceView(APIView):
@@ -77,7 +78,9 @@ class AddBalanceView(APIView):
         summary='Пополнение баланса',
         description='Пополнение баланса пользователя на передаваемую сумму (amount)',
         request=BalanceSerializer,
-        responses=SuccessSerializer,
+        responses={
+            status.HTTP_200_OK: BalanceSerializer,
+        },
     )
     def post(self, request):
         serializer = BalanceSerializer(data=self.request.data, context={ 'request': self.request })
@@ -87,7 +90,7 @@ class AddBalanceView(APIView):
         customer.balance += serializer.validated_data['amount']
         customer.save()
 
-        return Response(SuccessSerializer, status=status.HTTP_200_OK)
+        return Response(BalanceSerializer, status=status.HTTP_200_OK)
 
 
 class PurchaseListView(ListAPIView):
@@ -104,10 +107,9 @@ class PurchaseListView(ListAPIView):
         summary='Получить список заказов',
         description='Получение информации обо всех заказах пользователя',
         responses={
-            200: OpenApiResponse(response=PurchaseSerializer(many=True), description='Список всех заказов пользователя')
+            status.HTTP_200_OK: OpenApiResponse(response=PurchaseSerializer(many=True), description='Список всех заказов пользователя')
         }
     )
-
     def get(self, request):
         return self.list(request)
 
@@ -120,8 +122,14 @@ class PurchaseDeleteView(DestroyAPIView):
         summary='Удаление покупки пользователя',
         description='Удаление покупки пользователя через её id',
         request=PurchaseDeleteSerializer,
-        responses=SuccessSerializer,
+        responses={
+            status.HTTP_200_OK: None,
+        },
     )
-    def delete(self, request):
+    def delete(self, request, **kwargs):
+        purchase = get_object_or_404(Purchase, id=kwargs.get('id'))
+        if purchase.user.id != request.user.id:
+            return Response({'message': 'The purchase being removed does not belong to the user'}, status=status.HTTP_403_FORBIDDEN)
 
-        return Response(SuccessSerializer, status=status.HTTP_200_OK)
+        purchase.delete()
+        return Response(None, status=status.HTTP_204_NO_CONTENT)
