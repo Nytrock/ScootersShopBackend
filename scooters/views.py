@@ -14,6 +14,7 @@ from drf_spectacular.utils import extend_schema, OpenApiResponse
 class ScooterList(viewsets.GenericViewSet, mixins.ListModelMixin):
     serializer_class=ScooterSerializer
     queryset = Scooter.objects.all()
+
     @extend_schema(
         summary="Получение информации обо всех самокатах",
         description="Возвращает список всех самокатов.",
@@ -21,6 +22,7 @@ class ScooterList(viewsets.GenericViewSet, mixins.ListModelMixin):
             200: OpenApiResponse(response=ScooterSerializer(many=True), description="Список всех самокатов")
         }
     )
+
     def get(self, request):
         return self.list(request)
     
