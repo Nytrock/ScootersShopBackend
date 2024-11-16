@@ -1,15 +1,10 @@
 import os
 from pathlib import Path
 
-from environs import Env
-
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-env = Env()
-env.read_env()
-SECRET_KEY = env('SECRET_KEY')
-
-DEBUG = env('DEBUG')
+SECRET_KEY = os.environ.get('SECRET_KEY')
+DEBUG = os.environ.get('DEBUG')
 
 ALLOWED_HOSTS = ['127.0.0.1', '.vercel.app', '.now.sh']
 
