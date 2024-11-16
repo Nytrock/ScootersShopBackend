@@ -135,6 +135,7 @@ class PurchaseDeleteView(DestroyAPIView):
         return Response(None, status=status.HTTP_204_NO_CONTENT)
 
 class ProfileView(RetrieveAPIView):
+    permission_classes = [IsAuthenticated]
     @extend_schema(
         summary='Профиль польщователя',
         description='Возвращает id, баланс и фото пользователя',
