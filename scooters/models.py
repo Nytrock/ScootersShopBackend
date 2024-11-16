@@ -7,7 +7,7 @@ class Scooter(models.Model):
     price = models.IntegerField(verbose_name='Цена', default=1)
 
     def __str__(self):
-        return f'{self.title}'
+        return self.title
 
     class Meta:
         verbose_name = 'Самокат'

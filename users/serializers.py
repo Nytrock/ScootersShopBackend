@@ -3,7 +3,7 @@ from django.contrib.auth.models import User
 from rest_framework import serializers
 from rest_framework.serializers import ModelSerializer, Serializer
 
-from users.models import Customer
+from users.models import Customer, Purchase
 
 
 class UserSerializer(ModelSerializer):
@@ -52,3 +52,20 @@ class LoginSerializer(Serializer):
             raise serializers.ValidationError('Both "username" and "password" are required.', code='authorization')
         attrs['user'] = user
         return attrs
+
+
+class BalanceSerializer(Serializer):
+    amount = serializers.IntegerField(
+        label='Amount',
+        write_only=True
+    )
+
+class PurchaseSerializer(ModelSerializer):
+    class Meta:
+        model = Purchase
+        fields = '__all__'
+
+class PurchaseDeleteSerializer(ModelSerializer):
+    class Meta:
+        model = Purchase
+        fields = ['id']

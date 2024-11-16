@@ -13,6 +13,9 @@ class Customer(models.Model):
         verbose_name = 'Пользователь'
         verbose_name_plural = 'Пользователи'
 
+    def __str__(self):
+        return self.user.username
+
 
 class Purchase(models.Model):
     user = models.ForeignKey(Customer, verbose_name='Покупатель', on_delete=models.CASCADE)
@@ -24,3 +27,6 @@ class Purchase(models.Model):
     class Meta:
         verbose_name = 'Покупка'
         verbose_name_plural = 'Покупки'
+
+    def __str__(self):
+        return f'Покупка #{self.id}'
