@@ -1,0 +1,67 @@
+{% extends "base.html" %}
+{% load static %}
+{% block title %} Самокат {% endblock %}
+{% block content %}
+<div class="homepage-bg"></div>
+    <div class="buy__container container">
+        <div class="buy__content">
+            <div class="buy_imageBlock">
+                <img src="{% if scooter.image %}{{ scooter.image.url }}{% endif %}">
+             </div>
+            <div class="buy__info ">
+                <h1 class="buy_info__slogan text-title">{{ scooter.title }}</h1>
+                <p class="buy_info__description text">
+                    Максимальная скорость: {{ scooter.max_speed }} км/ч
+                </p>
+                <p class="buy_info__description text">
+                    Вес: {{ scooter.weight }} кг
+                </p>
+                <p class="buy_info__description text">
+                    Цена: {{ scooter.price }} руб./мин.
+                </p>
+                <form action="{% url 'catalog:scooter_detail' scooter.id %}" method="post">
+                    {% csrf_token %}
+                    <div class="buy_info__input">
+                        <input name="time" id="buyInput" type="range" min="10" max="120" step="10" value="60">
+                        <p class="buy_info__time text" id="time">60 минут</p>
+                    </div>
+                    <div class="buy_info__price">
+                        <button type="submit">Купить</button>
+                        <p class="buy_info_price__text">Итого: <span id="amount">0</span></p>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let timeNode = document.querySelector(`#time`);
+        let priceNode = document.querySelector(`#amount`);
+        let input = document.querySelector(`#buyInput`);
+        let time = 0;
+        let hours = 0;
+
+        input.addEventListener(`input`, updatePrice);
+
+        function updatePrice(evt){
+            time = input.value;
+            priceNode.innerHTML = time * {{ scooter.price }};
+
+            if(evt.target.value == 120){
+                hours = 2;
+                timeNode.innerHTML = hours  + ` часа`;
+            } else if (evt.target.value == 60) {
+                hours = 1;
+                timeNode.innerHTML = hours  + ` час`;
+            } else if (evt.target.value > 60){
+                hours = 1;
+                timeNode.innerHTML = hours + " час " + (time-60) + " минут";
+            } else if(evt.target.value < 60){
+                timeNode.innerHTML = time + " минут";
+            }
+        }
+
+        time = input.value;
+        priceNode.innerHTML = time * {{ scooter.price }};
+    </script>
+{% endblock %}

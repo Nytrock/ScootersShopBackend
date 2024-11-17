@@ -1,0 +1,61 @@
+{% extends "base.html" %}
+{% load static %}
+{% block title %} Профиль {% endblock %}
+{% block content %}
+    <div class="profile__container container">
+        <div class="profile__content">
+            <h1 class="profile__title text-title">Личный Кабинет</h1>
+            <div class="profile__blocks">
+                <div class="profile_blocks__prof">
+                    <form id="upload_image_form" method="post" enctype="multipart/form-data" class="profile_card_user__image">
+                        {% csrf_token %}
+                        <input type="file" id="{{ form_image.image.html_name }}" name="{{ form_image.image.html_name }}" hidden onchange="document.getElementById('upload_image_form').submit()" accept="image/jpeg, image/png"/>
+                        <button class="profile_card_user_info_buttons__image-change" type="button" onclick="document.getElementById('{{ form_image.image.html_name }}').click();"></button>
+                        <img src="{% if customer.image %} {{ customer.image.url }} {% else %} {% static 'svg/profilepic.svg' %} {% endif %}" alt="pic">
+                    </form>
+                    <p class="profile_blocks_prof__name text">{{ user.username }}</p>
+                    <p class="profile_blocks_prof__info text">Эл. почта: <span class="profile_blocks_pron__value">{{ user.email }}</span></p>
+                    <p class="profile_blocks_prof__info text">Баланс:        <span class="profile_blocks_pron__value balance">{{ customer.balance }} рублей</span></p>
+                    <a href="{% url 'users:balance_add' %}">Пополнить баланс</a>
+                </div>
+                <div class="profile_blocks__buy">
+                    <h1 class="profile_blocks_buy__title text">Ваши покупки:</h1>
+                    <div class="buy__cards">
+                        {% for purchase in purchases %}
+                            <form action="post" method="." class="profile_blocks_buy__card">
+                                {% csrf_token %}
+                                <input hidden name="id" value="{{ purchase.id }}">
+                                <img src="{% if purchase.scooter.image %}{{ purchase.scooter.image.url }}{% endif %}" alt="sam">
+                                <p class="profile_blocks_buy__text text">{{ purchase.scooter.title }}</p>
+                                <p class="profile_blocks_buy__text text">Время покупки: <span class="profile_blocks_buy__value text">{{ purchase.buy_time }}</span></p>
+                                <p class="profile_blocks_buy__text text">Цена:<span class="profile_blocks_buy__value text"> {{ purchase.price }} рублей </span></p>
+                                <p class="profile_blocks_buy__text text">Время: <span class="profile_blocks_buy__value text"> {{ purchase.time }} минут </span></p>
+                                <button onclick="purchaseDelete(this)" type="button" class="profile_blocks_buy__but">Удалить</button>
+                            </form>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function purchaseDelete(clickedElement){
+            var button = $(clickedElement);
+            var frm = $(clickedElement).parent();
+            var data = $(frm).serialize();
+            $.ajax({
+                type: 'POST',
+                data: data,
+                url: '{% url 'users:profile' %}',
+                success:  function (data) {
+                    frm.remove();
+                },
+                error: function () {
+                    console.log('I want to die');
+                }
+            });
+            return false;
+        }
+    </script>
+{% endblock %}

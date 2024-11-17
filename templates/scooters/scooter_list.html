@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+{% load static %}
+{% block title %} Самокаты {% endblock %}
+{% block content %}
+    <div class="catalog__container container">
+            <div class="catalog__content">
+                <h1 class="catalog__title text-title">Каталог</h1>
+                <div class="catalog_buy__cards">
+                    {% for scooter in object_list %}
+                        <div class="catalog_blocks_buy__card">
+                            <img src="{% if scooter.image %}{{ scooter.image.url }}{% endif %}" alt="sam">
+                            <p class="catalog_blocks_buy__text text">{{ scooter.title }}</p>
+                            <p class="catalog_blocks_buy__text text">Цена:<span class="profile_blocks_buy__value text"> {{ scooter.price }} руб./мин. </span></p>
+                            <p class="catalog_blocks_buy__text text">Вес:<span class="profile_blocks_buy__value text"> {{ scooter.weight }}</span></p>
+                            <p class="catalog_blocks_buy__text text">Максимальная скорость:<span class="profile_blocks_buy__value text"> {{ scooter.max_speed }}</span></p>
+                            <a href="{% url 'catalog:scooter_detail' scooter.id %}" class="catalog_blocks_buy__but">Открыть</a>
+                        </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+{% endblock %}

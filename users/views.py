@@ -1,154 +1,62 @@
-from django.contrib.auth import login, logout
-from django.shortcuts import get_object_or_404
-from drf_spectacular.utils import extend_schema, OpenApiResponse
-from rest_framework import status
-from rest_framework.generics import ListAPIView, DestroyAPIView
-from rest_framework.permissions import AllowAny, IsAuthenticated
-from rest_framework.response import Response
-from rest_framework.views import APIView
-from rest_framework.generics import RetrieveAPIView
+from django.contrib.auth.mixins import LoginRequiredMixin
+from django.http import JsonResponse
+from django.shortcuts import get_object_or_404, render, redirect
+from django.urls import reverse_lazy
+from django.views import View
+from django.views.generic import FormView
+
+from core.views import is_ajax
+from users.forms import CustomerCreateForm, CustomerImageForm, CustomerBalanceAddForm
 from users.models import Customer, Purchase
-from users.serializers import LoginSerializer, UserSerializer, BalanceSerializer, PurchaseSerializer, \
-    PurchaseDeleteSerializer, CustomerSerializer
 
 
-class SignupView(APIView):
-    permission_classes = (AllowAny,)
+class SignupView(FormView):
+    form_class = CustomerCreateForm
+    template_name = 'users/signup.html'
+    success_url = reverse_lazy('users:login')
 
-    @extend_schema(
-        summary='Регистрация пользователя',
-        description='Регистрация нового пользователя по имени, паролю и почте',
-        request=UserSerializer,
-        responses={
-            status.HTTP_200_OK: UserSerializer,
-            status.HTTP_400_BAD_REQUEST: OpenApiResponse(
-                response=None,
-                description='Ошибки сериалайзера'),
-        }
-    )
-    def post(self, request):
-        serializer = UserSerializer(data=request.data)
-        if serializer.is_valid():
-            serializer.save()
-            return Response(serializer.data, status=status.HTTP_201_CREATED)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    def form_valid(self, form):
+        form.save()
+        return super().form_valid(form)
 
 
-class LoginView(APIView):
-    permission_classes = (AllowAny,)
-
-    @extend_schema(
-        summary='Вход пользователя',
-        description='Вход пользователя по имени и паролю. Информация о входе сохраняется на стороне пользователя',
-        request=LoginSerializer,
-        responses={
-            status.HTTP_200_OK: LoginSerializer,
-            status.HTTP_400_BAD_REQUEST: OpenApiResponse(
-                response=None,
-                description='Ошибки сериалайзера'),
-        },
-    )
-    def post(self, request):
-        serializer = LoginSerializer(data=self.request.data, context={ 'request': self.request })
-        serializer.is_valid(raise_exception=True)
-        user = serializer.validated_data['user']
-        login(request, user)
-        return Response(serializer.data, status=status.HTTP_200_OK)
-
-
-class LogoutView(APIView):
-
-    @extend_schema(
-        summary='Выход пользователя',
-        description='Выход пользователя. На вход ничего не требует, выход происходит через метадату или вроде того',
-        request=None,
-        responses={
-            status.HTTP_200_OK: None,
-        },
-    )
-    def post(self, request):
-        logout(request)
-        return Response(None, status=status.HTTP_200_OK)
-
-
-class AddBalanceView(APIView):
-    permission_classes = [IsAuthenticated]
-
-    @extend_schema(
-        summary='Пополнение баланса',
-        description='Пополнение баланса пользователя на передаваемую сумму (amount)',
-        request=BalanceSerializer,
-        responses={
-            status.HTTP_200_OK: BalanceSerializer,
-        },
-    )
-    def post(self, request):
-        serializer = BalanceSerializer(data=self.request.data, context={ 'request': self.request })
-        serializer.is_valid(raise_exception=True)
-
-        customer = get_object_or_404(Customer.objects, id=request.user.id)
-        customer.balance += serializer.validated_data['amount']
-        customer.save()
-
-        return Response(BalanceSerializer, status=status.HTTP_200_OK)
-
-
-class PurchaseListView(ListAPIView):
-    serializer_class = PurchaseSerializer
-    model = serializer_class.Meta.model
-    permission_classes = [IsAuthenticated]
-
-    def get_queryset(self):
-        queryset = Purchase.objects.filter(user=self.request.user.id)
-        return queryset
-
-
-    @extend_schema(
-        summary='Получить список заказов',
-        description='Получение информации обо всех заказах пользователя',
-        responses={
-            status.HTTP_200_OK: OpenApiResponse(response=PurchaseSerializer(many=True), description='Список всех заказов пользователя')
-        }
-    )
+class ProfileView(LoginRequiredMixin, View):
     def get(self, request):
-        return self.list(request)
+        template = 'users/profile.html'
+
+        customer = get_object_or_404(Customer, user=request.user.id)
+        image_form = CustomerImageForm()
+        purchases = Purchase.objects.filter(user=customer)
+
+        context = {
+            'form_image': image_form,
+            'customer': customer,
+            'purchases': purchases
+        }
+
+        return render(request, template, context)
+
+    def post(self, request):
+        if not is_ajax(request):
+            customer = get_object_or_404(Customer, user=request.user)
+            form_image = CustomerImageForm(request.POST, request.FILES, instance=customer)
+
+            if form_image.is_valid():
+                form_image.save()
+
+            return redirect("users:profile")
+        else:
+            purchase = get_object_or_404(Purchase, id=request.POST.get('id'))
+            if purchase.user.id == request.user.id:
+                purchase.delete()
+            return JsonResponse({})
 
 
-class PurchaseDeleteView(DestroyAPIView):
-    serializer_class = PurchaseDeleteSerializer
-    permission_classes = [IsAuthenticated]
+class BalanceAddView(LoginRequiredMixin, FormView):
+    form_class = CustomerBalanceAddForm
+    success_url = reverse_lazy('users:profile')
+    template_name = 'users/balance_add.html'
 
-    @extend_schema(
-        summary='Удаление покупки пользователя',
-        description='Удаление покупки пользователя через её id',
-        request=PurchaseDeleteSerializer,
-        responses={
-            status.HTTP_200_OK: None,
-        },
-    )
-    def delete(self, request, **kwargs):
-        purchase = get_object_or_404(Purchase, id=kwargs.get('id'))
-        if purchase.user.id != request.user.id:
-            return Response({'message': 'The purchase being removed does not belong to the user'}, status=status.HTTP_403_FORBIDDEN)
-
-        purchase.delete()
-        return Response(None, status=status.HTTP_204_NO_CONTENT)
-
-class ProfileView(RetrieveAPIView):
-    permission_classes = [IsAuthenticated]
-    @extend_schema(
-        summary='Профиль польщователя',
-        description='Возвращает id, баланс и фото пользователя',
-        request=CustomerSerializer,
-        responses={
-            200: OpenApiResponse(response=CustomerSerializer, description='Профиль пользователя'),
-            404: OpenApiResponse(description="Пользователь не найден")
-        },
-    )
-    def get(self, request):
-        try:
-            user = Customer.objects.get(id=request.user.id)
-        except Customer.DoesNotExist:
-            return Response(CustomerSerializer.errors)
-        serializer = CustomerSerializer(user)
-        return Response(serializer.data)
+    def form_valid(self, form):
+        form.save(self.request.user)
+        return super().form_valid(form)

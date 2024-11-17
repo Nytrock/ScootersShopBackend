@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+{% load static %}
+{% block title %} Вход {% endblock %}
+{% block content %}
+    <div class="center-container">
+        <div class="container form__container login__container">
+            <h1 class="login__title text-title">Войти</h1>
+
+            <form class="login__content" method="post" action=".">
+              {% include "includes/form.html" %}
+              {% include "includes/form_errors.html" %}
+                <button class="login__but" type="submit">ВОЙТИ</button>
+            </form>
+        </div>
+    </div>
+{% endblock %}

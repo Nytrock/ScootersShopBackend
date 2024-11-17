@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+{% load static %}
+{% block title %} Главная {% endblock %}
+{% block content %}
+
+<div class="homepage-bg"></div>
+<div class="welcome__container container">
+    <div class="welcome__content flex-row">
+        <img src="{% static 'media/samokat.png' %}">
+        <div class="welcome__info ">
+            <h1 class="welcome_info__slogan text-title">ЗАВЕЗЁМ КУДА СКАЖИТЕ!</h1>
+            <p class="welcome_info__description text">
+                Наши самокаты самые быстрые среди конкурентов.
+                Доступны в каждом районе.
+            </p>
+            <div class="welcome_info__buts">
+                <a class="link login" href="{% url 'users:login' %}">
+                        Вход
+                </a>
+                <a class="link register" href="{% url 'users:signup' %}">
+                        Зарегистрироваться
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

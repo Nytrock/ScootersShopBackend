@@ -1,0 +1,13 @@
+{% extends "base.html" %}
+{% load static %}
+{% block title %} Пополнение баланса {% endblock %}
+{% block content %}
+    <div class="container form__container">
+        <h1 class="register__title text-title">Пополнить баланс</h1>
+        <form class="register__content" method="post" action=".">
+            {% include "includes/form.html" %}
+            {% include "includes/form_errors.html" %}
+            <button class="register__but" type="submit">Пополнить</button>
+        </form>
+    </div>
+{% endblock %}
